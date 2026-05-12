@@ -1,0 +1,15 @@
+from http import HTTPStatus
+
+
+class HttpCode:
+
+    OK = HTTPStatus.OK.value
+    CREATED = HTTPStatus.CREATED.value
+    NO_CONTENT = HTTPStatus.NO_CONTENT.value
+    BAD_REQUEST = HTTPStatus.BAD_REQUEST.value
+    UNAUTHORIZED = HTTPStatus.UNAUTHORIZED.value
+    FORBIDDEN = HTTPStatus.FORBIDDEN.value
+    NOT_FOUND = HTTPStatus.NOT_FOUND.value
+    CONFLICT = HTTPStatus.CONFLICT.value
+    UNPROCESSABLE_ENTITY = HTTPStatus.UNPROCESSABLE_ENTITY.value
+    INTERNAL_SERVER_ERROR = HTTPStatus.INTERNAL_SERVER_ERROR.value
