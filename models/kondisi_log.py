@@ -25,8 +25,17 @@ class KondisiLog(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
-    alat = relationship("Alat", back_populates="kondisi_log")
+    alat = relationship(
+        "Alat", 
+        back_populates="kondisi_log"
+    )
 
-    peminjaman = relationship("Peminjaman", back_populates="kondisi_log")
+    peminjaman = relationship(
+        "Peminjaman", 
+        back_populates="kondisi_log"
+    )
 
-    pencatat = relationship("User", back_populates="kondisi_log")
+    pencatat = relationship(
+        "User", 
+        back_populates="kondisi_log"
+    )

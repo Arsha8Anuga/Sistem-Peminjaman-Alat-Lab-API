@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from app.models.peminjaman import Peminjaman
 from app.schemas.peminjaman import PeminjamanCreate
 
+
+#Kode untuk READ
 def get_all_peminjaman(db: Session):
     return db.query(Peminjaman).all()
 
@@ -13,6 +15,7 @@ def get_peminjaman_by_kode(db: Session, kode_peminjaman: str):
         Peminjaman.kode_peminjaman == kode_peminjaman
     ).first()
 
+#Kode untuk CREATE
 def create_peminjaman(db: Session, data: PeminjamanCreate):
     new_data = Peminjaman(**data.model_dump())
 
@@ -22,6 +25,7 @@ def create_peminjaman(db: Session, data: PeminjamanCreate):
 
     return new_data
 
+#Kode untuk UPDATE
 def update_peminjaman(db: Session, peminjaman_id: int, update_data: dict):
     peminjaman = get_peminjaman_by_id(db, peminjaman_id)
 
@@ -46,6 +50,7 @@ def update_peminjaman(db: Session, peminjaman_id: int, update_data: dict):
 
     return peminjaman
 
+#Kode untuk DELETE
 def delete_peminjaman(db: Session, peminjaman_id: int):
     peminjaman = get_peminjaman_by_id(db, peminjaman_id)
 

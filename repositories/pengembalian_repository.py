@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.pengembalian import Pengembalian
 from app.schemas.pengembalian import PengembalianCreate
 
-
+#Kode untuk READ
 def get_all_pengembalian(db: Session):
     return db.query(Pengembalian).all()
 
@@ -16,6 +16,7 @@ def get_pengembalian_by_peminjaman(db: Session, peminjaman_id: int):
         Pengembalian.peminjaman_id == peminjaman_id
     ).first()
 
+#Kode untuk CREATE
 def create_pengembalian(db: Session, data: PengembalianCreate):
     new_data = Pengembalian(**data.model_dump())
 
@@ -25,6 +26,7 @@ def create_pengembalian(db: Session, data: PengembalianCreate):
 
     return new_data
 
+#Kode untuk UPDATE
 def update_pengembalian(db: Session, pengembalian_id: int, update_data: dict):
     data = get_pengembalian_by_id(db, pengembalian_id)
 
@@ -48,6 +50,7 @@ def update_pengembalian(db: Session, pengembalian_id: int, update_data: dict):
 
     return data
 
+#Kode untuk DELETE
 def delete_pengembalian(db: Session, pengembalian_id: int):
     data = get_pengembalian_by_id(db, pengembalian_id)
 

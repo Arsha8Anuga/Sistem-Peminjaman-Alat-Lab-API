@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.alat import Alat
 from app.schemas.alat import AlatCreate
 
+
 def get_all_alat(db: Session):
     return db.query(Alat).all()
 

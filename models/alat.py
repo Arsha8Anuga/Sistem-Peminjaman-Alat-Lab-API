@@ -41,8 +41,19 @@ class Alat(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
-    kategori = relationship("KategoriAlat", back_populates="alat")
+    kategori = relationship(
+        "KategoriAlat", 
+        back_populates="alat"
+    )
 
-    detail_peminjaman = relationship("DetailPeminjaman", back_populates="alat", lazy="selectin")
+    detail_peminjaman = relationship(
+        "DetailPeminjaman", 
+        back_populates="alat", 
+        lazy="selectin"
+    )
 
-    kondisi_log = relationship("KondisiLog", back_populates="alat", lazy="selectin")
+    kondisi_log = relationship(
+        "KondisiLog", 
+        back_populates="alat", 
+        lazy="selectin"
+    )

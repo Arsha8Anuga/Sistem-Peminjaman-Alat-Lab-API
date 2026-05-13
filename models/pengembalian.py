@@ -29,7 +29,7 @@ class Pengembalian(Base):
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-
+    
     peminjaman = relationship(
         "Peminjaman",
         back_populates="pengembalian",
