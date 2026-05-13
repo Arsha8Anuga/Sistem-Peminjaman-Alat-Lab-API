@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from app.database.base import Base
 
@@ -15,7 +15,7 @@ class KategoriAlat(Base):
 
     deskripsi = Column(Text, nullable=True)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
     alat = relationship(

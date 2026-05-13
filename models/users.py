@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Enum
 from sqlalchemy.orm import relationship
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from app.database.base import Base
 from app.constants.enums import UserRole
@@ -26,9 +26,9 @@ class User(Base):
 
     foto = Column(String(255), nullable=True)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
     peminjaman_mahasiswa = relationship(
@@ -42,6 +42,12 @@ class User(Base):
         "Peminjaman",
         foreign_keys="Peminjaman.disetujui_oleh",
         back_populates="laboran",
+        lazy="selectin",
+    )
+
+    pengembalian_diterima = relationship(
+        "Pengembalian",
+        back_populates="penerima",
         lazy="selectin",
     )
 

@@ -13,12 +13,9 @@ def get_alat_by_kode(db: Session, kode_alat: str):
 
 def create_alat(db: Session, alat_data: AlatCreate):
     new_alat = Alat(**alat_data.model_dump())
-
     db.add(new_alat)
-    db.commit()
-    db.refresh(new_alat)
-
     return new_alat
+
 
 def update_alat(db: Session, alat_id: int, update_data: dict):
     alat = get_alat_by_id(db, alat_id)
@@ -26,29 +23,11 @@ def update_alat(db: Session, alat_id: int, update_data: dict):
     if not alat:
         return None
 
-    allowed_fields = {
-        "kategori_id",
-        "kode_alat",
-        "nama_alat",
-        "merk",
-        "spesifikasi",
-        "lokasi_penyimpanan",
-        "stok_total",
-        "stok_tersedia",
-        "kondisi_fisik",
-        "status_ketersediaan",
-        "foto",
-        "deskripsi",
-    }
-
     for key, value in update_data.items():
-        if key in allowed_fields:
-            setattr(alat, key, value)
-
-    db.commit()
-    db.refresh(alat)
+        setattr(alat, key, value)
 
     return alat
+
 
 def delete_alat(db: Session, alat_id: int):
     alat = get_alat_by_id(db, alat_id)
@@ -57,6 +36,4 @@ def delete_alat(db: Session, alat_id: int):
         return None
 
     db.delete(alat)
-    db.commit()
-
     return alat
