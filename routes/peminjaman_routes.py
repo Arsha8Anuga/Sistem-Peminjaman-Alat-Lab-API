@@ -1,4 +1,6 @@
 # app/routes/peminjaman_routes.py
+# ⚠️  File ini TIDAK BERUBAH dari versi sebelumnya.
+#     Logika pembatasan akses mahasiswa sepenuhnya ada di service.
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -35,6 +37,8 @@ router = APIRouter(
 
 # =========================================================
 # LIST PEMINJAMAN
+# Mahasiswa  → service otomatis filter hanya punyanya sendiri
+# Lainnya    → service tampilkan semua
 # =========================================================
 @router.get(
     "/",
@@ -56,6 +60,8 @@ def list_peminjaman(
 
 # =========================================================
 # DETAIL PEMINJAMAN
+# Mahasiswa  → service raise 403 jika bukan punyanya
+# Lainnya    → service izinkan akses
 # =========================================================
 @router.get(
     "/{peminjaman_id}",
@@ -74,15 +80,14 @@ def detail_peminjaman(
 
 
 # =========================================================
-# AJUKAN PEMINJAMAN
-# MAHASISWA ONLY
+# AJUKAN PEMINJAMAN — MAHASISWA ONLY
 # =========================================================
 @router.post(
     "/",
     response_model=PeminjamanResponse,
 )
 def create_peminjaman(
-    data: PeminjamanAjukan,          # ← sebelumnya: data: dict
+    data: PeminjamanAjukan,
     db: Session = Depends(get_db),
     current_user=Depends(
         require_roles(UserRole.MAHASISWA)
@@ -91,13 +96,12 @@ def create_peminjaman(
     return ajukan_peminjaman(
         db,
         current_user.id,
-        data,                         # ← PeminjamanAjukan diteruskan ke service
+        data,
     )
 
 
 # =========================================================
-# APPROVE
-# LABORAN / ADMIN
+# APPROVE — LABORAN / ADMIN
 # =========================================================
 @router.put(
     "/{peminjaman_id}/approve",
@@ -121,7 +125,7 @@ def approve(
 
 
 # =========================================================
-# REJECT
+# REJECT — LABORAN / ADMIN
 # =========================================================
 @router.put(
     "/{peminjaman_id}/reject",
@@ -146,7 +150,7 @@ def reject(
 
 
 # =========================================================
-# AMBIL ALAT
+# AMBIL ALAT — LABORAN / ADMIN
 # =========================================================
 @router.put(
     "/{peminjaman_id}/ambil",
@@ -169,8 +173,7 @@ def ambil(
 
 
 # =========================================================
-# CANCEL
-# MAHASISWA SENDIRI
+# CANCEL — MAHASISWA SENDIRI
 # =========================================================
 @router.put(
     "/{peminjaman_id}/cancel",
