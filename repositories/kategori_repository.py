@@ -2,11 +2,6 @@ from sqlalchemy.orm import Session
 from app.models.kategori_alat import KategoriAlat
 from app.schemas.kategori_alat import KategoriAlatCreate
 
-
-# ---------------------------------------------------------------------
-# READ
-# ---------------------------------------------------------------------
-
 def get_all_kategori(db: Session):
     return db.query(KategoriAlat).all()
 
@@ -26,11 +21,6 @@ def get_kategori_by_nama(db: Session, nama_kategori: str):
         .first()
     )
 
-
-# ---------------------------------------------------------------------
-# CREATE
-# ---------------------------------------------------------------------
-
 def create_kategori(db: Session, kategori_data: KategoriAlatCreate):
     new_kategori = KategoriAlat(
         nama_kategori=kategori_data.nama_kategori,
@@ -42,11 +32,6 @@ def create_kategori(db: Session, kategori_data: KategoriAlatCreate):
     db.refresh(new_kategori)
 
     return new_kategori
-
-
-# ---------------------------------------------------------------------
-# UPDATE
-# ---------------------------------------------------------------------
 
 def update_kategori(db: Session, kategori_id: int, update_data: dict):
     kategori = get_kategori_by_id(db, kategori_id)
@@ -68,11 +53,6 @@ def update_kategori(db: Session, kategori_id: int, update_data: dict):
 
     return kategori
 
-
-# ---------------------------------------------------------------------
-# DELETE
-# ---------------------------------------------------------------------
-
 def delete_kategori(db: Session, kategori_id: int):
     kategori = get_kategori_by_id(db, kategori_id)
 
@@ -83,11 +63,6 @@ def delete_kategori(db: Session, kategori_id: int):
     db.commit()
 
     return kategori
-
-
-# ---------------------------------------------------------------------
-# OPTIONAL
-# ---------------------------------------------------------------------
 
 def count_kategori(db: Session):
     return db.query(KategoriAlat).count()

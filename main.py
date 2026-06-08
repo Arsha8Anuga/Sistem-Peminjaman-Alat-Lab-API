@@ -12,7 +12,6 @@ from app.models.detail_peminjaman import DetailPeminjaman
 from app.models.pengembalian import Pengembalian
 from app.models.kondisi_log import KondisiLog
 
-# Routers
 from app.routes.auth_routes import router as auth_router
 # from app.routes.user_routes import router as user_router
 from app.routes.alat_routes import router as alat_router
@@ -33,28 +32,19 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # nanti ganti spesifik domain
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------------------
-# Root test endpoint
-# ---------------------------------------------------------------------
 @app.get("/")
 def test():
     return {"key": "hello world"}
 
-# ---------------------------------------------------------------------
-# DB init (DEV ONLY)
-# ---------------------------------------------------------------------
 print(Base.metadata.tables.keys())
 Base.metadata.create_all(bind=engine)
 
-# ---------------------------------------------------------------------
-# Register routers
-# ---------------------------------------------------------------------
 app.include_router(auth_router)
 # app.include_router(user_router)
 app.include_router(alat_router)
@@ -63,9 +53,6 @@ app.include_router(peminjaman_router)
 app.include_router(pengembalian_router)
 app.include_router(upload_router)
 
-# ---------------------------------------------------------------------
-# Run app
-# ---------------------------------------------------------------------
 if __name__ == "__main__":
     uvicorn.run(
         app="main:app",

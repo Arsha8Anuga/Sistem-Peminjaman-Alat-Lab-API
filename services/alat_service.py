@@ -1,25 +1,35 @@
 from sqlalchemy.orm import Session
-from typing import Tuple, List
 from app.repositories import alat_repository
 from app.models.alat import Alat
 from app.constants import HttpCode, ResponseMessage
 from app.utils.file_upload import save_file, delete_file, is_valid_image
 from fastapi import HTTPException, UploadFile
 
-
-def get_all_alat(db: Session, page: int = 1, page_size: int = 10) -> Tuple[List[Alat], int]:
+def get_all_alat(
+    db: Session,
+    page: int = 1,
+    page_size: int = 10
+):
 
     skip = (page - 1) * page_size
 
-    data = alat_repository.get_all_alat(db, skip=skip, limit=page_size)
-    total = alat_repository.count_alat(db)
+    data = alat_repository.get_all_alat(
+        db,
+        skip=skip,
+        limit=page_size
+    )
 
-    return data, total
+    return data
 
+def get_alat_by_id(
+    db: Session,
+    alat_id: int
+) -> Alat:
 
-def get_alat_by_id(db: Session, alat_id: int) -> Alat:
-
-    alat = alat_repository.get_alat_by_id(db, alat_id)
+    alat = alat_repository.get_alat_by_id(
+        db,
+        alat_id
+    )
 
     if not alat:
         raise HTTPException(
@@ -29,10 +39,14 @@ def get_alat_by_id(db: Session, alat_id: int) -> Alat:
 
     return alat
 
-
-def create_alat(db: Session, alat_data, file: UploadFile = None):
+def create_alat(
+    db: Session,
+    alat_data,
+    file: UploadFile = None
+):
 
     try:
+
         if alat_data.stok_total < 0 or alat_data.stok_tersedia < 0:
             raise HTTPException(
                 status_code=HttpCode.BAD_REQUEST,
@@ -48,6 +62,7 @@ def create_alat(db: Session, alat_data, file: UploadFile = None):
         data = alat_data.model_dump()
 
         if file:
+
             if not is_valid_image(file):
                 raise HTTPException(
                     status_code=HttpCode.BAD_REQUEST,
@@ -55,12 +70,13 @@ def create_alat(db: Session, alat_data, file: UploadFile = None):
                 )
 
             path = save_file(file, "alat")
+
             data["foto"] = path
 
-        new_alat = alat_repository.create_alat(db, data)
-
-        db.commit()
-        db.refresh(new_alat)
+        new_alat = alat_repository.create_alat(
+            db,
+            data
+        )
 
         return new_alat
 
@@ -70,20 +86,39 @@ def create_alat(db: Session, alat_data, file: UploadFile = None):
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 
-def update_alat(db: Session, alat_id: int, update_data, file=None):
+def update_alat(
+    db: Session,
+    alat_id: int,
+    update_data,
+    file=None
+):
 
-    alat = alat_repository.get_alat_by_id(db, alat_id)
+    alat = alat_repository.get_alat_by_id(
+        db,
+        alat_id
+    )
 
     if not alat:
-        raise HTTPException(HttpCode.NOT_FOUND, ResponseMessage.ALAT_NOT_FOUND)
+        raise HTTPException(
+            HttpCode.NOT_FOUND,
+            ResponseMessage.ALAT_NOT_FOUND
+        )
 
     try:
-        data = update_data.model_dump(exclude_unset=True)
+
+        data = update_data.model_dump(
+            exclude_unset=True
+        )
 
         if file:
+
             if not is_valid_image(file):
                 raise HTTPException(
                     status_code=HttpCode.BAD_REQUEST,
@@ -94,12 +129,14 @@ def update_alat(db: Session, alat_id: int, update_data, file=None):
                 delete_file(alat.foto)
 
             path = save_file(file, "alat")
+
             data["foto"] = path
 
-        updated = alat_repository.update_alat(db, alat_id, data)
-
-        db.commit()
-        db.refresh(updated)
+        updated = alat_repository.update_alat(
+            db,
+            alat_id,
+            data
+        )
 
         return updated
 
@@ -107,21 +144,31 @@ def update_alat(db: Session, alat_id: int, update_data, file=None):
         db.rollback()
         raise
 
+def delete_alat(
+    db: Session,
+    alat_id: int
+):
 
-def delete_alat(db: Session, alat_id: int):
-
-    alat = alat_repository.get_alat_by_id(db, alat_id)
+    alat = alat_repository.get_alat_by_id(
+        db,
+        alat_id
+    )
 
     if not alat:
-        raise HTTPException(HttpCode.NOT_FOUND, ResponseMessage.ALAT_NOT_FOUND)
+        raise HTTPException(
+            HttpCode.NOT_FOUND,
+            ResponseMessage.ALAT_NOT_FOUND
+        )
 
     try:
+
         if alat.foto:
             delete_file(alat.foto)
 
-        deleted = alat_repository.delete_alat(db, alat_id)
-
-        db.commit()
+        deleted = alat_repository.delete_alat(
+            db,
+            alat_id
+        )
 
         return deleted
 

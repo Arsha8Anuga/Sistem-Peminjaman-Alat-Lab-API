@@ -1,53 +1,57 @@
+# app/schemas/pengembalian.py
+
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
 
 from app.constants.enums import (
-    StatusVerifikasiPengembalian
+    StatusVerifikasiPengembalian,
+    KondisiFisik,
 )
 
+class PengembalianDetailItem(BaseModel):
 
-# =========================================================
-# BASE
-# =========================================================
-class PengembalianBase(BaseModel):
+    detail_peminjaman_id: int
+    alat_id: int
+    jumlah: int
+
+    kondisi_akhir: KondisiFisik
+
+    catatan_pengembalian: Optional[str] = None
+
+class PengembalianCreate(BaseModel):
 
     peminjaman_id: int
-    tanggal_dikembalikan: datetime
-    denda: Decimal = Field(
-        default=Decimal("0.00")
-    )
+
+    denda: Decimal = Field(default=Decimal("0.00"))
 
     catatan: Optional[str] = None
 
+    detail: list[PengembalianDetailItem]
 
-# =========================================================
-# CREATE
-# staff input pengembalian
-# =========================================================
-class PengembalianCreate(PengembalianBase):
-    pass
-
-
-# =========================================================
-# VERIFY
-# admin/laboran verify kondisi
-# =========================================================
 class PengembalianVerify(BaseModel):
 
     status_verifikasi: StatusVerifikasiPengembalian
+
     catatan: Optional[str] = None
 
-
-# =========================================================
-# RESPONSE
-# =========================================================
-class PengembalianResponse(PengembalianBase):
+class PengembalianResponse(BaseModel):
 
     id: int
-    diterima_oleh: int
+
+    peminjaman_id: int
+
+    diterima_oleh: Optional[int] = None
+
+    tanggal_dikembalikan: datetime
+
+    denda: Decimal
+
     status_verifikasi: StatusVerifikasiPengembalian
+
+    catatan: Optional[str] = None
+
     created_at: datetime
 
     class Config:

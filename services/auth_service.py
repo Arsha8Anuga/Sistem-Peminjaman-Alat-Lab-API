@@ -12,10 +12,6 @@ from app.utils.jwt_handler import create_access_token
 from app.constants import HttpCode, ResponseMessage
 from app.constants.enums import UserRole
 
-
-# =========================================================
-# LOGIN
-# =========================================================
 def login_user(db: Session, data):
 
     user = get_user_by_email(db, data.email)
@@ -38,10 +34,6 @@ def login_user(db: Session, data):
         "token_type": "bearer",
     }
 
-
-# =========================================================
-# REGISTER
-# =========================================================
 def register_user(db: Session, user_data: UserRegister):
 
     try:
@@ -53,12 +45,10 @@ def register_user(db: Session, user_data: UserRegister):
                 detail=ResponseMessage.EMAIL_TAKEN,
             )
 
-        # build clean payload
         user_dict = user_data.model_dump()
 
         user_dict["password"] = hash_password(user_dict["password"])
 
-        # ROLE DIPAKSA DI BACKEND
         user_dict["role"] = UserRole.MAHASISWA
 
         new_user = create_user(db, user_dict)

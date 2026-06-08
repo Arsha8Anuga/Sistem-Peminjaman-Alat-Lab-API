@@ -1,9 +1,10 @@
+# app/schemas/peminjaman.py
+
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import date, datetime
 
-from app.constants.enums import StatusPeminjaman
-
+from app.constants.enums import StatusPeminjaman, KondisiFisik
 
 class PeminjamanBase(BaseModel):
     kode_peminjaman: str
@@ -15,8 +16,10 @@ class PeminjamanBase(BaseModel):
     status: StatusPeminjaman
     catatan: Optional[str] = None
 
+
 class PeminjamanCreate(PeminjamanBase):
     pass
+
 
 class PeminjamanResponse(PeminjamanBase):
     id: int
@@ -25,3 +28,17 @@ class PeminjamanResponse(PeminjamanBase):
 
     class Config:
         from_attributes = True
+
+class DetailAjukan(BaseModel):
+
+    alat_id: int
+    jumlah: int
+    kondisi_awal: KondisiFisik = KondisiFisik.BAIK
+
+
+class PeminjamanAjukan(BaseModel):
+  
+    tanggal_pinjam: date
+    tanggal_rencana_kembali: date
+    catatan: Optional[str] = None
+    detail: List[DetailAjukan]

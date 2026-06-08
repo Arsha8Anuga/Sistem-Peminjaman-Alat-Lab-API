@@ -7,17 +7,8 @@ from app.repositories import kategori_repository
 from app.constants import HttpCode, ResponseMessage
 
 
-# ============================================================================
-# READ ALL
-# ============================================================================
-
 def get_all_kategori(db: Session):
     return kategori_repository.get_all_kategori(db)
-
-
-# ============================================================================
-# READ BY ID (SAFE ACCESS)
-# ============================================================================
 
 def get_kategori_by_id(db: Session, kategori_id: int):
 
@@ -30,11 +21,6 @@ def get_kategori_by_id(db: Session, kategori_id: int):
         )
 
     return kategori
-
-
-# ============================================================================
-# CREATE (TRANSACTION SAFE STYLE)
-# ============================================================================
 
 def create_kategori(db: Session, kategori_data):
 
@@ -56,11 +42,6 @@ def create_kategori(db: Session, kategori_data):
             status_code=HttpCode.INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
-
-
-# ============================================================================
-# UPDATE
-# ============================================================================
 
 def update_kategori(db: Session, kategori_id: int, update_data: dict):
 
@@ -90,11 +71,6 @@ def update_kategori(db: Session, kategori_id: int, update_data: dict):
             status_code=HttpCode.INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
-
-
-# ============================================================================
-# DELETE
-# ============================================================================
 
 def delete_kategori(db: Session, kategori_id: int):
 

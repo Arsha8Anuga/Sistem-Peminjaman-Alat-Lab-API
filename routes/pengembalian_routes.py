@@ -31,39 +31,52 @@ router = APIRouter(
 )
 
 
-# =========================================================
-# DETAIL PENGEMBALIAN
-# =========================================================
 @router.get(
     "/{peminjaman_id}",
     response_model=PengembalianResponse,
 )
 def detail_pengembalian(
-
     peminjaman_id: int,
-
     db: Session = Depends(get_db),
-
     current_user=Depends(get_current_user),
 ):
 
     return get_pengembalian_by_peminjaman(
         db,
         peminjaman_id,
+        current_user,
     )
 
 
-# =========================================================
-# CREATE PENGEMBALIAN
-# =========================================================
 @router.post(
     "/",
     response_model=PengembalianResponse,
 )
 def create_pengembalian(
-
     data: PengembalianCreate,
+    db: Session = Depends(get_db),
 
+    current_user=Depends(
+        require_roles(
+            UserRole.MAHASISWA,
+        )
+    ),
+):
+
+    return catat_pengembalian(
+        db,
+        data,
+        current_user,
+    )
+
+
+@router.put(
+    "/{pengembalian_id}/verify",
+    response_model=PengembalianResponse,
+)
+def verify_pengembalian(
+    pengembalian_id: int,
+    data: PengembalianVerify,
     db: Session = Depends(get_db),
 
     current_user=Depends(
@@ -75,33 +88,9 @@ def create_pengembalian(
     ),
 ):
 
-    return catat_pengembalian(
-        db,
-        data,
-        current_user.id,
-    )
-
-
-# =========================================================
-# VERIFY PENGEMBALIAN
-# =========================================================
-@router.put(
-    "/{pengembalian_id}/verify",
-    response_model=PengembalianResponse,
-)
-def verify(
-    pengembalian_id: int,
-    data: PengembalianVerify,
-    db: Session = Depends(get_db),
-    current_user=Depends(
-        require_roles(
-            UserRole.ADMIN,
-            UserRole.LABORAN,
-        )
-    ),
-):
     return verifikasi_pengembalian(
         db,
         pengembalian_id,
         data,
+        current_user,
     )

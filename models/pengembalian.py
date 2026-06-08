@@ -13,7 +13,7 @@ class Pengembalian(Base):
 
     peminjaman_id = Column(Integer, ForeignKey("peminjaman.id"), nullable=False)
 
-    diterima_oleh = Column(Integer, ForeignKey("users.id"), nullable=False)
+    diterima_oleh = Column( Integer, ForeignKey("users.id"), nullable=True )
 
     tanggal_dikembalikan = Column(DateTime, nullable=False)
 

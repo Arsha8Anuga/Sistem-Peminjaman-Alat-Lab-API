@@ -1,4 +1,7 @@
+# app/services/pengembalian_service.py
+
 from datetime import datetime, timezone
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -7,36 +10,49 @@ from app.repositories import (
     peminjaman_repository,
     alat_repository,
 )
-from app.constants import HttpCode, ResponseMessage
+
+from app.middleware.auth_middleware import (
+    can_access_peminjaman,
+)
+
+from app.constants import (
+    HttpCode,
+    ResponseMessage,
+)
+
 from app.constants.enums import (
     StatusPeminjaman,
     StatusVerifikasiPengembalian,
     KondisiFisik,
 )
 
+def _get_peminjaman_or_404(
+    db: Session,
+    peminjaman_id: int,
+):
 
-# ============================================================================
-# HELPER
-# ============================================================================
+    peminjaman = peminjaman_repository.get_peminjaman_by_id(
+        db,
+        peminjaman_id,
+    )
 
-def _get_peminjaman_or_404(db: Session, peminjaman_id: int):
-    data = peminjaman_repository.get_peminjaman_by_id(db, peminjaman_id)
-    if not data:
+    if not peminjaman:
         raise HTTPException(
             status_code=HttpCode.NOT_FOUND,
             detail=ResponseMessage.PEMINJAMAN_NOT_FOUND,
         )
-    return data
 
+    return peminjaman
 
-# ============================================================================
-# READ
-# ============================================================================
+def get_pengembalian_by_peminjaman(
+    db: Session,
+    peminjaman_id: int,
+    current_user,
+):
 
-def get_pengembalian_by_peminjaman(db: Session, peminjaman_id: int):
-
-    data = pengembalian_repository.get_pengembalian_by_peminjaman_id(
-        db, peminjaman_id
+    data = pengembalian_repository.get_pengembalian_by_peminjaman(
+        db,
+        peminjaman_id,
     )
 
     if not data:
@@ -45,48 +61,66 @@ def get_pengembalian_by_peminjaman(db: Session, peminjaman_id: int):
             detail=ResponseMessage.PENGEMBALIAN_NOT_FOUND,
         )
 
+    can_access_peminjaman(
+        data.peminjaman,
+        current_user,
+    )
+
     return data
-
-
-# ============================================================================
-# CREATE PENGEMBALIAN
-# ============================================================================
 
 def catat_pengembalian(
     db: Session,
-    peminjaman_id: int,
-    diterima_oleh: int,
     pengembalian_data,
+    current_user,
 ):
 
-    peminjaman = _get_peminjaman_or_404(db, peminjaman_id)
+    peminjaman = _get_peminjaman_or_404(
+        db,
+        pengembalian_data.peminjaman_id,
+    )
+
+    if peminjaman.mahasiswa_id != current_user.id:
+
+        raise HTTPException(
+            status_code=HttpCode.FORBIDDEN,
+            detail=ResponseMessage.FORBIDDEN,
+        )
 
     if peminjaman.status != StatusPeminjaman.DIPINJAM:
+
         raise HTTPException(
             status_code=HttpCode.BAD_REQUEST,
             detail=ResponseMessage.PEMINJAMAN_INVALID_STATUS,
         )
 
-    try:
-        # ------------------------------------------------------------
-        # 1. CREATE PENGEMBALIAN
-        # ------------------------------------------------------------
-        pengembalian = pengembalian_repository.create_pengembalian(
-            db,
-            peminjaman_id=peminjaman_id,
-            diterima_oleh=diterima_oleh,
-            tanggal_dikembalikan=datetime.now(timezone.utc),
-            denda=pengembalian_data.denda,
-            catatan=pengembalian_data.catatan,
-            status_verifikasi=StatusVerifikasiPengembalian.MENUNGGU,
+    existing = pengembalian_repository.get_pengembalian_by_peminjaman(
+        db,
+        peminjaman.id,
+    )
+
+    if existing:
+
+        raise HTTPException(
+            status_code=HttpCode.BAD_REQUEST,
+            detail="Pengembalian sudah pernah diajukan",
         )
 
-        # ------------------------------------------------------------
-        # 2. PROCESS DETAIL
-        # ------------------------------------------------------------
+    try:
+
+        pengembalian = pengembalian_repository.create_pengembalian(
+            db,
+            {
+                "peminjaman_id": peminjaman.id,
+                "diterima_oleh": None,
+                "tanggal_dikembalikan": datetime.now(timezone.utc),
+                "denda": pengembalian_data.denda,
+                "status_verifikasi": StatusVerifikasiPengembalian.MENUNGGU,
+                "catatan": pengembalian_data.catatan,
+            }
+        )
+
         for detail in pengembalian_data.detail:
 
-            # update detail peminjaman
             pengembalian_repository.update_kondisi_akhir_detail(
                 db,
                 detail_id=detail.detail_peminjaman_id,
@@ -94,37 +128,31 @@ def catat_pengembalian(
                 catatan_pengembalian=detail.catatan_pengembalian,
             )
 
-            # return stock
             alat_repository.tambah_stok(
                 db,
                 alat_id=detail.alat_id,
                 jumlah=detail.jumlah,
             )
 
-            # log kondisi
             alat_repository.catat_kondisi_log(
                 db,
                 alat_id=detail.alat_id,
-                peminjaman_id=peminjaman_id,
+                peminjaman_id=peminjaman.id,
                 kondisi=detail.kondisi_akhir,
-                catatan=detail.catatan_pengembalian,
-                dicatat_oleh=diterima_oleh,
+                catatan_kerusakan=detail.catatan_pengembalian,
+                dicatat_oleh=current_user.id,
             )
 
-            # update kondisi alat (if worse)
             _update_kondisi_fisik_alat_jika_perlu(
                 db,
-                alat_id=detail.alat_id,
-                kondisi_akhir=detail.kondisi_akhir,
+                detail.alat_id,
+                detail.kondisi_akhir,
             )
 
-        # ------------------------------------------------------------
-        # 3. UPDATE PEMINJAMAN STATUS
-        # ------------------------------------------------------------
         peminjaman_repository.update_status_peminjaman(
             db,
-            peminjaman_id=peminjaman_id,
-            status=StatusPeminjaman.DIKEMBALIKAN,
+            peminjaman.id,
+            StatusPeminjaman.DIKEMBALIKAN,
         )
 
         db.commit()
@@ -137,91 +165,87 @@ def catat_pengembalian(
         raise
 
     except Exception as e:
+
         db.rollback()
+
         raise HTTPException(
             status_code=500,
             detail=str(e),
         )
 
-
-# ============================================================================
-# VERIFIKASI PENGEMBALIAN
-# ============================================================================
-
 def verifikasi_pengembalian(
     db: Session,
     pengembalian_id: int,
-    status_verifikasi: StatusVerifikasiPengembalian,
-    catatan: str = "",
+    data,
+    current_user,
 ):
 
     pengembalian = pengembalian_repository.get_pengembalian_by_id(
-        db, pengembalian_id
+        db,
+        pengembalian_id,
     )
 
     if not pengembalian:
+
         raise HTTPException(
             status_code=HttpCode.NOT_FOUND,
             detail=ResponseMessage.PENGEMBALIAN_NOT_FOUND,
         )
 
-    if pengembalian.status_verifikasi != StatusVerifikasiPengembalian.MENUNGGU:
+    if (
+        pengembalian.status_verifikasi
+        != StatusVerifikasiPengembalian.MENUNGGU
+    ):
+
         raise HTTPException(
             status_code=HttpCode.BAD_REQUEST,
-            detail="Status pengembalian tidak valid",
+            detail="Pengembalian sudah diverifikasi",
         )
 
     try:
-        # ------------------------------------------------------------
-        # UPDATE STATUS VERIFIKASI
-        # ------------------------------------------------------------
-        updated = pengembalian_repository.update_status_verifikasi(
+
+        updated = pengembalian_repository.update_pengembalian(
             db,
-            pengembalian_id=pengembalian_id,
-            status_verifikasi=status_verifikasi,
-            catatan=catatan,
+            pengembalian_id,
+            {
+                "status_verifikasi": data.status_verifikasi,
+                "catatan": data.catatan,
+                "diterima_oleh": current_user.id,
+            }
         )
 
-        peminjaman = _get_peminjaman_or_404(db, pengembalian.peminjaman_id)
+        if (
+            data.status_verifikasi
+            == StatusVerifikasiPengembalian.SESUAI
+        ):
 
-        # ------------------------------------------------------------
-        # SESUAI → SELESAI
-        # ------------------------------------------------------------
-        if status_verifikasi == StatusVerifikasiPengembalian.SESUAI:
             peminjaman_repository.update_status_peminjaman(
                 db,
-                peminjaman_id=pengembalian.peminjaman_id,
-                status=StatusPeminjaman.SELESAI,
+                pengembalian.peminjaman_id,
+                StatusPeminjaman.SELESAI,
             )
 
-        # ------------------------------------------------------------
-        # RUSAK
-        # ------------------------------------------------------------
-        elif status_verifikasi == StatusVerifikasiPengembalian.RUSAK:
-            for detail in peminjaman.detail_peminjaman:
-                alat_repository.update_kondisi_fisik(
-                    db,
-                    alat_id=detail.alat_id,
-                    kondisi=KondisiFisik.RUSAK_RINGAN,
-                )
+        elif (
+            data.status_verifikasi
+            == StatusVerifikasiPengembalian.RUSAK
+        ):
 
-        # ------------------------------------------------------------
-        # HILANG (FIXED LOGIC)
-        # ------------------------------------------------------------
-        elif status_verifikasi == StatusVerifikasiPengembalian.HILANG:
-            for detail in peminjaman.detail_peminjaman:
+            peminjaman_repository.update_status_peminjaman(
+                db,
+                pengembalian.peminjaman_id,
+                StatusPeminjaman.SELESAI,
+            )
 
-                alat_repository.kurangi_stok_total(
-                    db,
-                    alat_id=detail.alat_id,
-                    jumlah=detail.jumlah,
-                )
+        elif (
+            data.status_verifikasi
+            == StatusVerifikasiPengembalian.HILANG
+        ):
 
-                alat_repository.update_kondisi_fisik(
-                    db,
-                    alat_id=detail.alat_id,
-                    kondisi=KondisiFisik.HILANG,
-                )
+            peminjaman_repository.update_status_peminjaman(
+                db,
+                pengembalian.peminjaman_id,
+                StatusPeminjaman.SELESAI,
+            )
 
         db.commit()
         db.refresh(updated)
@@ -233,16 +257,13 @@ def verifikasi_pengembalian(
         raise
 
     except Exception as e:
+
         db.rollback()
+
         raise HTTPException(
             status_code=500,
             detail=str(e),
         )
-
-
-# ============================================================================
-# INTERNAL LOGIC
-# ============================================================================
 
 _URUTAN_KONDISI = [
     KondisiFisik.BAIK,
@@ -259,19 +280,31 @@ def _update_kondisi_fisik_alat_jika_perlu(
     kondisi_akhir: KondisiFisik,
 ):
 
-    alat = alat_repository.get_alat_by_id(db, alat_id)
+    alat = alat_repository.get_alat_by_id(
+        db,
+        alat_id,
+    )
+
     if not alat:
         return
 
     try:
-        idx_now = _URUTAN_KONDISI.index(alat.kondisi_fisik)
-        idx_new = _URUTAN_KONDISI.index(kondisi_akhir)
+
+        idx_now = _URUTAN_KONDISI.index(
+            alat.kondisi_fisik
+        )
+
+        idx_new = _URUTAN_KONDISI.index(
+            kondisi_akhir
+        )
+
     except ValueError:
         return
 
     if idx_new > idx_now:
+
         alat_repository.update_kondisi_fisik(
             db,
-            alat_id=alat_id,
-            kondisi=kondisi_akhir,
+            alat_id,
+            kondisi_akhir,
         )

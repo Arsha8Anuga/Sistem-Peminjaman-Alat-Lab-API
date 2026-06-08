@@ -31,10 +31,6 @@ router = APIRouter(
     tags=["Kategori"],
 )
 
-
-# =========================================================
-# GET ALL
-# =========================================================
 @router.get(
     "/",
     response_model=list[KategoriAlatResponse],
@@ -45,10 +41,6 @@ def list_kategori(
 ):
     return get_all_kategori(db)
 
-
-# =========================================================
-# GET BY ID
-# =========================================================
 @router.get(
     "/{kategori_id}",
     response_model=KategoriAlatResponse,
@@ -60,10 +52,6 @@ def detail_kategori(
 ):
     return get_kategori_by_id(db, kategori_id)
 
-
-# =========================================================
-# CREATE
-# =========================================================
 @router.post(
     "/",
     response_model=KategoriAlatResponse,
@@ -72,7 +60,6 @@ def add_kategori(
     kategori_data: KategoriAlatCreate,
     db: Session = Depends(get_db),
 
-    # hanya admin/laboran
     current_user=Depends(
         require_roles(
             UserRole.ADMIN,
@@ -82,10 +69,6 @@ def add_kategori(
 ):
     return create_kategori(db, kategori_data)
 
-
-# =========================================================
-# UPDATE
-# =========================================================
 @router.put(
     "/{kategori_id}",
     response_model=KategoriAlatResponse,
@@ -95,7 +78,6 @@ def edit_kategori(
     update_data: KategoriAlatCreate,
     db: Session = Depends(get_db),
 
-    # hanya admin/laboran
     current_user=Depends(
         require_roles(
             UserRole.ADMIN,
@@ -109,10 +91,6 @@ def edit_kategori(
         update_data,
     )
 
-
-# =========================================================
-# DELETE
-# =========================================================
 @router.delete(
     "/{kategori_id}",
 )
@@ -120,7 +98,6 @@ def remove_kategori(
     kategori_id: int,
     db: Session = Depends(get_db),
 
-    # hanya admin
     current_user=Depends(
         require_roles(
             UserRole.ADMIN,

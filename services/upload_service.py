@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.utils.file_upload import save_file, delete_file
 from app.repositories import user_repository, alat_repository
-from app.constants import HttpCode
 
 
 def upload_file(db: Session, entity_type: str, entity_id: int, file):
@@ -27,7 +26,7 @@ def upload_file(db: Session, entity_type: str, entity_id: int, file):
     old_path = entity.foto
 
     try:
-        # update DB dulu
+
         if entity_type == "user":
             user_repository.update_user(db, entity_id, {"foto": new_path})
         else:
@@ -35,7 +34,6 @@ def upload_file(db: Session, entity_type: str, entity_id: int, file):
 
         db.commit()
 
-        # baru hapus file lama
         if old_path:
             delete_file(old_path)
 
