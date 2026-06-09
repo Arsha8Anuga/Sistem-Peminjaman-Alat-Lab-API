@@ -1,17 +1,8 @@
-# app/routes/peminjaman_routes.py
-# ⚠️  File ini TIDAK BERUBAH dari versi sebelumnya.
-#     Logika pembatasan akses mahasiswa sepenuhnya ada di service.
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-
-from app.schemas.peminjaman import (
-    PeminjamanAjukan,
-    PeminjamanResponse,
-)
-
+from app.schemas.peminjaman import PeminjamanAjukan, PeminjamanResponse
 from app.services.peminjaman_service import (
     get_all_peminjaman,
     get_peminjaman_by_id,
@@ -21,18 +12,14 @@ from app.services.peminjaman_service import (
     ambil_alat,
     batalkan_peminjaman,
 )
-
-from app.middleware.auth_middleware import (
-    get_current_user,
-    require_roles,
-)
-
+from app.middleware.auth_middleware import get_current_user, require_roles
 from app.constants.enums import UserRole
 
 router = APIRouter(
     prefix="/peminjaman",
     tags=["Peminjaman"],
 )
+
 
 @router.get(
     "/",
@@ -51,6 +38,7 @@ def list_peminjaman(
         current_user,
     )
 
+
 @router.get(
     "/{peminjaman_id}",
     response_model=PeminjamanResponse,
@@ -66,6 +54,7 @@ def detail_peminjaman(
         current_user,
     )
 
+
 @router.post(
     "/",
     response_model=PeminjamanResponse,
@@ -73,15 +62,14 @@ def detail_peminjaman(
 def create_peminjaman(
     data: PeminjamanAjukan,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        require_roles(UserRole.MAHASISWA)
-    ),
+    current_user=Depends(require_roles(UserRole.MAHASISWA)),
 ):
     return ajukan_peminjaman(
         db,
         current_user.id,
         data,
     )
+
 
 @router.put(
     "/{peminjaman_id}/approve",
@@ -90,18 +78,14 @@ def create_peminjaman(
 def approve(
     peminjaman_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        require_roles(
-            UserRole.LABORAN,
-            UserRole.ADMIN,
-        )
-    ),
+    current_user=Depends(require_roles(UserRole.LABORAN, UserRole.ADMIN)),
 ):
     return setujui_peminjaman(
         db,
         peminjaman_id,
         current_user.id,
     )
+
 
 @router.put(
     "/{peminjaman_id}/reject",
@@ -111,18 +95,14 @@ def reject(
     peminjaman_id: int,
     catatan: str = "",
     db: Session = Depends(get_db),
-    current_user=Depends(
-        require_roles(
-            UserRole.LABORAN,
-            UserRole.ADMIN,
-        )
-    ),
+    current_user=Depends(require_roles(UserRole.LABORAN, UserRole.ADMIN)),
 ):
     return tolak_peminjaman(
         db,
         peminjaman_id,
         catatan,
     )
+
 
 @router.put(
     "/{peminjaman_id}/ambil",
@@ -131,17 +111,13 @@ def reject(
 def ambil(
     peminjaman_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        require_roles(
-            UserRole.LABORAN,
-            UserRole.ADMIN,
-        )
-    ),
+    current_user=Depends(require_roles(UserRole.LABORAN, UserRole.ADMIN)),
 ):
     return ambil_alat(
         db,
         peminjaman_id,
     )
+
 
 @router.put(
     "/{peminjaman_id}/cancel",
@@ -150,9 +126,7 @@ def ambil(
 def cancel(
     peminjaman_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        require_roles(UserRole.MAHASISWA)
-    ),
+    current_user=Depends(require_roles(UserRole.MAHASISWA)),
 ):
     return batalkan_peminjaman(
         db,

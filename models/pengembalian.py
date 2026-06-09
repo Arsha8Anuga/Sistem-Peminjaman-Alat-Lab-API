@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, DateTime, ForeignKey, Text, Enum, DECIMAL, Integer
+from sqlalchemy import Column, DateTime, ForeignKey, Text, Enum, DECIMAL, Integer
 from sqlalchemy.orm import relationship
 from app.database.base import Base
 from datetime import datetime, timezone
@@ -9,11 +9,11 @@ class Pengembalian(Base):
 
     __tablename__ = "pengembalian"
 
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
     peminjaman_id = Column(Integer, ForeignKey("peminjaman.id"), nullable=False)
 
-    diterima_oleh = Column( Integer, ForeignKey("users.id"), nullable=True )
+    diterima_oleh = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     tanggal_dikembalikan = Column(DateTime, nullable=False)
 

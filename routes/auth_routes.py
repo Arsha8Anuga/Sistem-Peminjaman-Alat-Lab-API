@@ -7,11 +7,14 @@ from app.schemas.user import UserRegister, UserLogin, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
+
+@router.post("/login")
 def login(
     data: UserLogin,
     db: Session = Depends(get_db),
 ):
     return login_user(db, data)
+
 
 @router.post("/register", response_model=UserResponse)
 def register(
